@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Испанский A1 — Тренажёры по темам</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+      }
+  .card {
+    background: #fff; border-radius: 20px; padding: 32px 26px;
+    max-width: 580px; width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  }
+  h1 { font-size: 1.4rem; color: #333; text-align: center; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+
+  /* Меню тем */
+  .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .menu button {
+    padding: 16px 10px; border: 2px solid #ddd; border-radius: 14px;
+    background: #fafafa; font-size: 0.95rem; cursor: pointer;
+    font-family: inherit; transition: all 0.2s; text-align: center;
+    font-weight: 600; color: #444; line-height: 1.4;
+  }
+  .menu button:hover { border-color: #764ba2; background: #f3f0ff; transform: translateY(-2px); }
+  .menu button .emoji { display: block; font-size: 1.6rem; margin-bottom: 4px; }
+
+  .progress { height: 8px; background: #eee; border-radius: 5px; overflow: hidden; margin-bottom: 20px; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: 0%; transition: width 0.4s ease; }
+
+  .topic-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #f0ebff;
+  }
+  .topic-header h2 { font-size: 1.1rem; color: #764ba2; }
+  .back-btn {
+    padding: 6px 12px; border: 2px solid #ddd; border-radius: 10px;
+    background: #fafafa; font-size: 0.85rem; cursor: pointer;
+    font-family: inherit; color: #666; transition: all 0.2s;
+  }
+  .back-btn:hover { border-color: #764ba2; color: #764ba2; }
+
+  .question { font-size: 1.2rem; color: #222; margin-bottom: 18px; line-height: 1.7; min-height: 60px; }
+  .word { cursor: help; border-bottom: 1px dotted #aaa; transition: background 0.15s; }
+  .word:hover { background: #f0ebff; border-radius: 3px; }
+  .blank { color: #764ba2; font-weight: bold; border-bottom: 2px dashed #764ba2; padding: 0 6px; }
+
+  .options { display: grid; gap: 10px; }
+  .option {
+    padding: 13px 18px; border: 2px solid #ddd; border-radius: 12px;
+    background: #fafafa; font-size: 1rem; cursor: pointer;
+    transition: all 0.2s ease; text-align: left; font-family: inherit;
+  }
+  .option:hover:not(:disabled) { border-color: #764ba2; background: #f3f0ff; transform: translateX(4px); }
+  .option.correct { border-color: #2ecc71; background: #e8f8ef; color: #1a7a45; font-weight: bold; }
+  .option.wrong { border-color: #e74c3c; background: #fdecea; color: #b03024; }
+  .option:disabled { cursor: default; }
+
+  .feedback { margin-top: 14px; font-size: 1rem; text-align: center; min-height: 24px; font-weight: bold; }
+  .feedback.ok { color: #2ecc71; }
+  .feedback.no { color: #e74c3c; }
+
+  .ai-box {
+    margin-top: 14px; padding: 13px 16px; border-radius: 12px;
+    background: #f3f0ff; border-left: 4px solid #764ba2;
+    font-size: 0.93rem; color: #444; line-height: 1.5; display: none;
+  }
+  .ai-box.show { display: block; animation: fadeIn 0.3s ease; }
+  .ai-box b { color: #764ba2; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+
+  .footer { display: flex; justify-content: space-between; margin-top: 20px; color: #666; font-size: 0.9rem; }
+  .score { font-weight: bold; color: #764ba2; }
+
+  .restart {
+    display: none; width: 100%; margin-top: 16px; padding: 14px; border: none;
+    border-radius: 12px; background: linear-gradient(90deg, #667eea, #764ba2);
+    color: #fff; font-size: 1rem; font-weight: bold; cursor: pointer;
+    font-family: inherit; transition: opacity 0.2s;
+  }
+  .restart:hover { opacity: 0.9; }
+  .result { text-align: center; padding: 20px 0; }
+  .result .big { font-size: 3rem; font-weight: bold; color: #764ba2; margin: 10px 0; }
+  .result p { color: #666; font-size: 1.1rem; }
+
+  .tooltip {
+    position: fixed; background: #222; color: #fff; padding: 5px 10px;
+    border-radius: 6px; font-size: 0.85rem; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; z-index: 100; white-space: nowrap;
+  }
+  .tooltip.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🇪🇸  Испанский A1</h1>
+  <p class="subtitle" id="subtitle">Выбери тренажёр. Наведи на слово — увидишь перевод.</p>
+
+  <!-- МЕНЮ ТЕМ -->
+  <div class="menu" id="menu"></div>
+
+  <!-- ЗАГОЛОВОК ТЕМЫ -->
+  <div class="topic-header" id="topicHeader" style="display:none;">
+    <h2 id="topicTitle"></h2>
+    <button class="back-btn" onclick="showMenu()">← К темам</button>
+  </div>
+
+  <div class="progress" id="progressWrap" style="display:none;">
+    <div class="progress-bar" id="bar"></div>
+  </div>
+
+  <div id="quiz" style="display:none;">
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="ai-box" id="aiBox"></div>
+  </div>
+
+  <div id="result" style="display:none;" class="result"></div>
+
+  <div class="footer" id="footer" style="display:none;">
+    <span>Вопрос <b id="current">1</b> из <b id="total">0</b></span>
+    <span>Счёт: <span class="score" id="score">0</span></span>
+  </div>
+
+  <button class="restart" id="restart" style="display:none;">🔄  Пройти заново</button>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+/* ============================================================
+   СЛОВАРЬ ДЛЯ ПОДСКАЗОК
+   ============================================================ */
+const dictionary = {
+  "el":"опред. артикль м.р.","la":"опред. артикль ж.р.","los":"опред. артикль мн.ч.","las":"опред. артикль ж.р. мн.ч.",
+  "un":"неопред. артикль м.р.","una":"неопред. артикль ж.р.","unos":"неопред. артикль мн.ч.","unas":"неопред. артикль ж.р. мн.ч.",
+  "libro":"книга","mesa":"стол","silla":"стул","casa":"дом","gato":"кот","perro":"собака",
+  "chico":"парень","chica":"девушка","amigo":"друг","amiga":"подруга","hombre":"мужчина","mujer":"женщина",
+  "niño":"ребёнок","niña":"девочка","ciudad":"город","país":"страна","flor":"цветок","sol":"солнце",
+  "luna":"луна","agua":"вода","pan":"хлеб","coche":"машина","escuela":"школа","universidad":"университет",
+  "trabajo":"работа","parque":"парк","playa":"пляж","tienda":"магазин","café":"кофе / кафе","calle":"улица",
+  "vivo":"живу","vivir":"жить","voy":"иду/еду","ir":"идти/ехать","soy":"я есть","ser":"быть",
+  "estoy":"я нахожусь","estar":"находиться","tengo":"имею","tener":"иметь","hablo":"говорю","hablar":"говорить",
+  "como":"ем","comer":"есть","puedo":"могу","poder":"мочь","quiero":"хочу","querer":"хотеть",
+  "hago":"делаю","hacer":"делать","vengo":"прихожу","venir":"приходить","sé":"знаю","saber":"знать",
+  "está":"находится","están":"находятся","es":"есть (характер.)","son":"есть (мн.ч.)","eres":"ты есть","somos":"мы есть",
+  "en":"в / на","a":"в / к","al":"в / к (a+el)","de":"из / от","del":"из / от (de+el)","sobre":"на / над",
+  "con":"с","sin":"без","para":"для","por":"за / через","y":"и","o":"или","pero":"но",
+  "muy":"очень","mucho":"много","poco":"мало","bueno":"хороший","malo":"плохой","grande":"большой","pequeño":"маленький",
+  "nuevo":"новый","viejo":"старый","bonito":"красивый","rojo":"красный","azul":"синий",
+  "moscú":"Москва","madrid":"Мадрид","españa":"Испания","rusia":"Россия","méxico":"Мексика",
+  "hermano":"брат","hermana":"сестра","padre":"отец","madre":"мать","hijo":"сын","hija":"дочь",
+  "todos":"все","días":"дни","mañana":"завтра/утро","hoy":"сегодня","ahora":"сейчас",
+  "aquí":"здесь","allí":"там","bien":"хорошо","mal":"плохо",
+  "hablas":"говоришь","habla":"говорит","hablamos":"говорим","habláis":"говорите","hablan":"говорят",
+  "tienes":"имеешь","tiene":"имеет","tenemos":"имеем","tenéis":"имеете","tienen":"имеют",
+  "vives":"живёшь","vive":"живёт","vivimos":"живём","vivís":"живёте","viven":"живут",
+  "vas":"идёшь","va":"идёт","vamos":"идём","vais":"идёте","van":"идут",
+  "puedes":"можешь","puede":"может","podemos":"можем","podéis":"можете","pueden":"могут",
+  "quieres":"хочешь","quiere":"хочет","queremos":"хотим","queréis":"хотите","quieren":"хотят",
+  "comes":"ешь","come":"ест","comemos":"едим","coméis":"едите","comen":"едят",
+  "tomo":"беру/пью","tomas":"берёшь","toma":"берёт","tomamos":"берём","tomáis":"берёте","toman":"берут",
+  "interesante":"интересный","simpático":"приятный","simpática":"приятная","caliente":"горячий","fría":"холодная",
+  "cansado":"уставший","profesor":"учитель","profesora":"учительница","estudiante":"студент",
+  "manzanas":"яблоки","ruso":"русский","rusa":"русская"
+};
+
+/* ============================================================
+   БАНКИ ВОПРОСОВ — КАЖДАЯ ТЕМА ОТДЕЛЬНО
+   ============================================================ */
+
+/* 1. ПРЕДЛОГИ */
+const preguntasPreposiciones = [
+  { text:"El libro está ___ la mesa.", correct:"en", options:["en","a","de"],
+    why:"<b>Estar en</b> = находиться НА поверхности." },
+  { text:"Vivo ___ Moscú.", correct:"en", options:["en","a","al"],
+    why:"<b>Vivir en</b> + город = жить В городе." },
+  { text:"Voy ___ supermercado.", correct:"al", options:["en","a","al"],
+    why:"<b>Ir a + el</b> = <b>al</b>. Слияние обязательно." },
+  { text:"Soy ___ España.", correct:"de", options:["en","de","a"],
+    why:"<b>Ser de</b> + страна = происхождение." },
+  { text:"Vamos ___ la escuela.", correct:"a", options:["en","a","al"],
+    why:"<b>Ir a + la</b> — слияния нет (ж.р.)." },
+  { text:"El gato está ___ la casa.", correct:"en", options:["en","a","de"],
+    why:"<b>Estar en</b> = внутри помещения." },
+  { text:"Vengo ___ trabajo.", correct:"del", options:["de","del","en"],
+    why:"<b>Venir de + el</b> = <b>del</b>. Слияние." },
+  { text:"El libro es ___ Ana.", correct:"de", options:["de","del","a"],
+    why:"<b>Ser de</b> + имя = принадлежность." },
+  { text:"Voy ___ cine con mis amigos.", correct:"al", options:["a","al","en"],
+    why:"<b>Ir a + el cine</b> = <b>al cine</b>." },
+  { text:"La lámpara está ___ la mesa.", correct:"sobre", options:["en","sobre","a"],
+    why:"<b>Sobre</b> = на поверхности, сверху." }
+];
+
+/* 2. ГЛАГОЛЫ PRESENTE */
+const preguntasVerbos = [
+  { text:"Yo ___ español todos los días.", correct:"hablo", options:["hablo","hablas","habla"],
+    why:"<b>Yo</b> → окончание <b>-o</b>." },
+  { text:"¿Tú ___ hermanos?", correct:"tienes", options:["tienes","tiene","tengo"],
+    why:"<b>Tener</b> — неправильный. Tú → <b>tienes</b>." },
+  { text:"Nosotros ___ en Moscú.", correct:"vivimos", options:["vivimos","viven","vivo"],
+    why:"<b>Nosotros</b> → <b>-imos</b> (глагол на -ir)." },
+  { text:"Ella ___ al gimnasio los lunes.", correct:"va", options:["va","vas","voy"],
+    why:"<b>Ir</b> — неправильный. Ella → <b>va</b>." },
+  { text:"Vosotros ___ venir mañana.", correct:"podéis", options:["podéis","pueden","puedo"],
+    why:"<b>Poder</b> — o→ue, но vosotros → <b>podéis</b> (без смены)." },
+  { text:"Yo ___ café por la mañana.", correct:"tomo", options:["tomo","tomas","toma"],
+    why:"<b>Tomar</b> — правильный. Yo → <b>tomo</b>." },
+  { text:"¿Tú ___ inglés?", correct:"hablas", options:["hablas","habla","hablo"],
+    why:"<b>Tú</b> → <b>-as</b> (глагол на -ar)." },
+  { text:"Él ___ en Madrid.", correct:"vive", options:["vive","vivo","vives"],
+    why:"<b>Él</b> → <b>-e</b> (глагол на -ir)." },
+  { text:"Nosotros ___ la comida.", correct:"comemos", options:["comemos","comen","como"],
+    why:"<b>Nosotros</b> → <b>-emos</b> (глагол на -er)." },
+    { text:"Ellos ___ estudiantes.", correct:"son", options:["son","es","están"],
+    why:"<b>Ser</b> — неправильный. Ellos → <b>son</b>." },
+  { text:"Yo ___ ir al cine.", correct:"quiero", options:["quiero","quieres","quiere"],
+    why:"<b>Querer</b> — e→ie, но yo → <b>quiero</b>." },
+  { text:"¿Vosotros ___ español?", correct:"habláis", options:["habláis","hablan","hablamos"],
+    why:"<b>Vosotros</b> → <b>-áis</b> (глагол на -ar)." }
+];
+
+/* 3. АРТИКЛИ */
+const preguntasArticulos = [
+  { text:"___ libro es interesante.", correct:"El", options:["El","La","Los"],
+    why:"<b>Libro</b> — м.р., ед.ч. → <b>el</b>." },
+  { text:"___ casa es grande.", correct:"La", options:["El","La","Las"],
+    why:"<b>Casa</b> — ж.р., ед.ч. → <b>la</b>." },
+  { text:"___ chicos estudian aquí.", correct:"Los", options:["El","Los","Las"],
+    why:"<b>Chicos</b> — м.р., мн.ч. → <b>los</b>." },
+  { text:"___ flores son bonitas.", correct:"Las", options:["Los","Las","La"],
+    why:"<b>Flores</b> — ж.р., мн.ч. → <b>las</b>." },
+  { text:"Tengo ___ perro.", correct:"un", options:["un","una","el"],
+    why:"Неопределённый артикль, м.р. → <b>un</b>." },
+  { text:"Quiero ___ agua.", correct:"un", options:["un","una","el"],
+    why:"<b>Agua</b> — ж.р., но ударное <b>a-</b>: используем <b>un</b>." },
+  { text:"Es ___ chica simpática.", correct:"una", options:["un","una","la"],
+    why:"<b>Chica</b> — ж.р. → <b>una</b>." },
+  { text:"___ sol brilla hoy.", correct:"El", options:["El","La","Un"],
+    why:"<b>Sol</b> — м.р., ед.ч. → <b>el</b>." },
+  { text:"___ luna es blanca.", correct:"La", options:["El","La","Un"],
+    why:"<b>Luna</b> — ж.р. → <b>la</b>." },
+  { text:"Compro ___ manzanas.", correct:"unas", options:["un","una","unas"],
+    why:"Мн.ч., ж.р., неопределённые → <b>unas</b>." }
+];
+
+/* 4. SER VS ESTAR */
+const preguntasSerEstar = [
+  { text:"Yo ___ ruso.", correct:"soy", options:["soy","estoy","es"],
+    why:"<b>Ser</b> — национальность (постоянное)." },
+  { text:"Ella ___ en casa.", correct:"está", options:["es","está","son"],
+    why:"<b>Estar</b> — местоположение." },
+  { text:"Nosotros ___ estudiantes.", correct:"somos", options:["somos","estamos","son"],
+    why:"<b>Ser</b> — профессия/род занятий." },
+  { text:"El café ___ caliente.", correct:"está", options:["es","está","son"],
+    why:"<b>Estar</b> — временное состояние." },
+  { text:"Madrid ___ en España.", correct:"está", options:["es","está","son"],
+    why:"<b>Estar</b> — местоположение города." },
+  { text:"Tú ___ muy simpático.", correct:"eres", options:["eres","estás","es"],
+    why:"<b>Ser</b> — черта характера (постоянная)." },
+  { text:"La sopa ___ fría.", correct:"está", options:["es","está","son"],
+    why:"<b>Estar</b> — текущее состояние еды." },
+  { text:"Ellos ___ de México.", correct:"son", options:["son","están","es"],
+    why:"<b>Ser de</b> — происхождение." },
+  { text:"Yo ___ cansado hoy.", correct:"estoy", options:["soy","estoy","es"],
+    why:"<b>Estar</b> — временное состояние." },
+  { text:"Mi madre ___ profesora.", correct:"es", options:["es","está","son"],
+    why:"<b>Ser</b> — профессия." }
+];
+
+/* 5. РОД И ЧИСЛО */
+const preguntasGenero = [
+  { text:"Книга → ___", correct:"el libro", options:["el libro","la libro","los libro"],
+    why:"<b>Libro</b> — м.р. (оканчивается на -o)." },
+  { text:"Дом → ___", correct:"la casa", options:["el casa","la casa","las casa"],
+    why:"<b>Casa</b> — ж.р. (оканчивается на -a)." },
+  { text:"Коты → ___", correct:"los gatos", options:["los gatos","las gatos","el gatos"],
+    why:"Мн.ч. м.р.: <b>los gatos</b>." },
+  { text:"Цветы → ___", correct:"las flores", options:["los flores","las flores","la flores"],
+    why:"Мн.ч. ж.р.: <b>las flores</b>." },
+  { text:"Город → ___", correct:"la ciudad", options:["el ciudad","la ciudad","los ciudad"],
+    why:"<b>Ciudad</b> — ж.р. (на -dad)." },
+  { text:"Друг (м.) → ___", correct:"el amigo", options:["el amigo","la amigo","los amigo"],
+    why:"<b>Amigo</b> — м.р. → <b>el amigo</b>." },
+    { text:"Подруга → ___", correct:"la amiga", options:["el amiga","la amiga","las amiga"],
+    why:"<b>Amiga</b> — ж.р. → <b>la amiga</b>." },
+  { text:"Машины → ___", correct:"los coches", options:["los coches","las coches","el coches"],
+    why:"<b>Coche</b> — м.р., мн.ч. → <b>los coches</b>." },
+  { text:"Улицы → ___", correct:"las calles", options:["los calles","las calles","la calles"],
+    why:"<b>Calle</b> — ж.р., мн.ч. → <b>las calles</b>." },
+  { text:"Солнце → ___", correct:"el sol", options:["el sol","la sol","los sol"],
+    why:"<b>Sol</b> — м.р. → <b>el sol</b>." }
+];
+
+/* 6. ПЕРЕВОД СЛОВ */
+const preguntasTraduccion = [
+  { text:"'книга' по-испански:", correct:"libro", options:["libro","mesa","casa"],
+    why:"<b>Libro</b> = книга. <b>Mesa</b> = стол, <b>casa</b> = дом." },
+  { text:"'дом' по-испански:", correct:"casa", options:["casa","calle","ciudad"],
+    why:"<b>Casa</b> = дом. <b>Calle</b> = улица, <b>ciudad</b> = город." },
+  { text:"'вода' по-испански:", correct:"agua", options:["agua","pan","sol"],
+    why:"<b>Agua</b> = вода. <b>Pan</b> = хлеб, <b>sol</b> = солнце." },
+  { text:"'друг' по-испански:", correct:"amigo", options:["amigo","hermano","padre"],
+    why:"<b>Amigo</b> = друг. <b>Hermano</b> = брат, <b>padre</b> = отец." },
+  { text:"'работа' по-испански:", correct:"trabajo", options:["trabajo","tienda","playa"],
+    why:"<b>Trabajo</b> = работа. <b>Tienda</b> = магазин, <b>playa</b> = пляж." },
+  { text:"'школа' по-испански:", correct:"escuela", options:["escuela","universidad","calle"],
+    why:"<b>Escuela</b> = школа. <b>Universidad</b> = университет." },
+  { text:"'кот' по-испански:", correct:"gato", options:["gato","perro","chico"],
+    why:"<b>Gato</b> = кот. <b>Perro</b> = собака, <b>chico</b> = парень." },
+  { text:"'город' по-испански:", correct:"ciudad", options:["ciudad","país","calle"],
+    why:"<b>Ciudad</b> = город. <b>País</b> = страна." },
+  { text:"'луна' по-испански:", correct:"luna", options:["luna","sol","flor"],
+    why:"<b>Luna</b> = луна. <b>Sol</b> = солнце, <b>flor</b> = цветок." },
+  { text:"'брат' по-испански:", correct:"hermano", options:["hermano","amigo","hijo"],
+    why:"<b>Hermano</b> = брат. <b>Hijo</b> = сын." }
+];
+
+/* ============================================================
+   РЕЕСТР ТЕМ
+   ============================================================ */
+const TOPICS = {
+  preposiciones: { name:"📍  Предлоги", data: preguntasPreposiciones },
+  verbos:        { name:"🔤  Глаголы Presente", data: preguntasVerbos },
+  articulos:     { name:"🔠  Артикли", data: preguntasArticulos },
+  ser_estar:     { name:"⚖️  Ser vs Estar", data: preguntasSerEstar },
+  genero:        { name:"♀️ ♂️  Род и число", data: preguntasGenero },
+  traduccion:    { name:"📖  Перевод слов", data: preguntasTraduccion }
+};
+
+/* ============================================================
+   СОСТОЯНИЕ
+   ============================================================ */
+let currentTopic = null;
+let quiz = [];
+let current = 0;
+let score = 0;
+const TOTAL = 8;
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function wrapWords(text) {
+  return text.split(' ').map(token => {
+    if (token.includes('___')) {
+      return token.replace('___', '<span class="blank">___</span>');
+    }
+    const clean = token.replace(/[.,!?¿¡"'«»]/g, '').toLowerCase();
+    if (dictionary[clean]) {
+      const punct = token.match(/[.,!?¿¡"'«»]+$/);
+      const p = punct ? punct[0] : '';
+      const base = token.replace(/[.,!?¿¡"'«»]+$/, '');
+      return `<span class="word" data-tr="${dictionary[clean]}">${base}</span>${p}`;
+    }
+    return token;
+  }).join(' ');
+}
+
+/* ============================================================
+   МЕНЮ
+   ============================================================ */
+function showMenu() {
+  document.getElementById('menu').style.display = 'grid';
+  document.getElementById('topicHeader').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  document.getElementById('restart').style.display = 'none';
+  document.getElementById('subtitle').textContent = 'Выбери тренажёр. Наведи на слово — увидишь перевод.';
+}
+
+function renderMenu() {
+  const menu = document.getElementById('menu');
+  menu.innerHTML = '';
+  Object.keys(TOPICS).forEach(key => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `<span class="emoji">${TOPICS[key].name.split(' ')[0]}</span>${TOPICS[key].name.split(' ').slice(1).join(' ')}`;
+    btn.onclick = () => startTopic(key);
+    menu.appendChild(btn);
+  });
+}
+
+/* ============================================================
+   СТАРТ ТЕМЫ
+   ============================================================ */
+function startTopic(key) {
+  currentTopic = key;
+  const topic = TOPICS[key];
+
+  quiz = shuffle(topic.data).slice(0, TOTAL).map(q => ({
+    ...q,
+    options: shuffle(q.options)
+  }));
+  current = 0;
+  score = 0;
+
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('topicHeader').style.display = 'flex';
+  document.getElementById('topicTitle').textContent = topic.name;
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('quiz').style.display = 'block';
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('footer').style.display = 'flex';
+  document.getElementById('restart').style.display = 'none';
+  document.getElementById('subtitle').textContent = 'Тренажёр: ' + topic.name;
+  document.getElementById('score').textContent = '0';
+  document.getElementById('total').textContent = Math.min(TOTAL, topic.data.length);
+
+  loadQuestion();
+}
+
+/* ============================================================
+   ВОПРОС
+   ============================================================ */
+function loadQuestion() {
+  const q = quiz[current];
+  document.getElementById('current').textContent = current + 1;
+  document.getElementById('question').innerHTML = wrapWords(q.text);
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('aiBox').classList.remove('show');
+
+  const box = document.getElementById('options');
+  box.innerHTML = '';
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(btn, opt, q);
+    box.appendChild(btn);
+  });
+
+  updateBar();
+  attachTooltips();
+}
+
+/* ============================================================
+   ПРОВЕРКА
+   ============================================================ */
+function checkAnswer(btn, chosen, q) {
+  document.querySelectorAll('.option').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.correct) b.classList.add('correct');
+  });
+
+  const fb = document.getElementById('feedback');
+  if (chosen === q.correct) {
+    score++;
+    document.getElementById('score').textContent = score;
+    fb.textContent = '✅ ¡Correcto! Правильно';
+    fb.classList.add('ok');
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = '❌ Incorrecto. Правильно: ' + q.correct;
+    fb.classList.add('no');
+  }
+
+  const ai = document.getElementById('aiBox');
+  ai.innerHTML = '🤖  <b>Почему:</b> ' + q.why;
+  ai.classList.add('show');
+
+  setTimeout(() => {
+    current++;
+    if (current < quiz.length) loadQuestion();
+    else showResult();
+  }, 3200);
+}
+
+function updateBar() {
+  document.getElementById('bar').style.width = (current / quiz.length) * 100 + '%';
+}
+/* ============================================================
+   РЕЗУЛЬТАТ
+   ============================================================ */
+function showResult() {
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  document.getElementById('restart').style.display = 'block';
+  document.getElementById('bar').style.width = '100%';
+
+  const percent = Math.round((score / quiz.length) * 100);
+  let emoji, msg;
+  if (percent === 100) { emoji = '🏆'; msg = '¡Perfecto! Идеально!'; }
+  else if (percent >= 70) { emoji = '🎉 '; msg = '¡Muy bien! Отличный результат!'; }
+  else if (percent >= 40) { emoji = '💪 '; msg = 'Bien, sigue practicando. Практикуйся ещё!'; }
+  else { emoji = '📚'; msg = 'Sigue estudiando. Продолжай учиться!'; }
+
+  const r = document.getElementById('result');
+  r.style.display = 'block';
+  r.innerHTML = `<div style="font-size:3rem;">${emoji}</div>
+    <div class="big">${score} / ${quiz.length}</div>
+    <p>${msg}</p>`;
+}
+
+/* ============================================================
+   ПОДСКАЗКИ
+   ============================================================ */
+const tooltip = document.getElementById('tooltip');
+function attachTooltips() {
+  document.querySelectorAll('.word').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      tooltip.textContent = el.dataset.tr;
+      tooltip.classList.add('show');
+      const r = el.getBoundingClientRect();
+      tooltip.style.left = r.left + 'px';
+      tooltip.style.top = (r.top - 32) + 'px';
+    });
+    el.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  });
+}
+
+/* ============================================================
+   КНОПКА "ЗАНОВО" — перезапускает ТОЛЬКО текущую тему
+   ============================================================ */
+document.getElementById('restart').onclick = () => {
+  if (currentTopic) startTopic(currentTopic);
+};
+
+/* ============================================================
+   ИНИЦИАЛИЗАЦИЯ
+   ============================================================ */
+renderMenu();
+showMenu();
+</script>
+</body>
+</html>
